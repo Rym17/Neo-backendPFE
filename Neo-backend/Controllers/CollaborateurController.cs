@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Azure.Core;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Neo_backend.Controllers
@@ -7,40 +8,25 @@ namespace Neo_backend.Controllers
     [ApiController]
     public class CollaborateurController : ControllerBase
     {
-        private static List<Collaborateur> collaborateurs = new List<Collaborateur>
-            {
-                new Collaborateur {
-                    Id=1,
-                    Nom="Charni",
-                    Prenom="Rym" ,
-                    Email_personnel="rymmm@gmail.com" ,
-                    Email_profesionnel="rym@neoledge.com" ,
-                    Naissance="1998 mars",
-                    Telephone="26962446" },
+        
+        private readonly DataContext context;
 
-                new Collaborateur {
-                    Id=2,
-                    Nom="Charni",
-                    Prenom="khouloud" ,
-                    Email_personnel="khou@gmail.com" ,
-                    Email_profesionnel="kh@cegid.com" ,
-                    Naissance="1994 mai",
-                    Telephone="23893723" }
-            };
-
-
+        public CollaborateurController(DataContext context)
+        {
+            this.context = context;
+        }
 
         [HttpGet]
         public async Task<ActionResult<List<Collaborateur>>> Get()
         {
 
-            return (Ok(collaborateurs));
+            return Ok(await context.Collaborateurs.ToListAsync());
         }
         [HttpGet("{Id}")]
         public async Task<ActionResult<Collaborateur>> Get( int Id)
         {
 
-            var collaborateur = collaborateurs.Find(x => x.Id == Id);
+            var collaborateur = await context.Collaborateurs.FindAsync(Id);
             if (collaborateur == null)
                 return BadRequest("collaborateur inexistant .");
             return (Ok(collaborateur));
@@ -50,27 +36,30 @@ namespace Neo_backend.Controllers
 
         public async Task<ActionResult<List<Collaborateur>>> AddCollab(Collaborateur collaborateur)
         {
-            collaborateurs.Add(collaborateur);
+            context.Collaborateurs.Add(collaborateur);
+            await context.SaveChangesAsync();
 
-            return (Ok(collaborateurs));
+            return Ok(await context.Collaborateurs.ToListAsync());
         }
 
         [HttpPut]
 
         public async Task<ActionResult<List<Collaborateur>>> UpdateCollab(Collaborateur request)
         {
-            var collaborateur = collaborateurs.Find(x => x.Id == request.Id);
-            if (collaborateur == null)
+            var dbcollaborateur = await context.Collaborateurs.FindAsync(request.Id);
+            if (dbcollaborateur == null)
                 return BadRequest("collaborateur inexistant .");
-           
-            collaborateur.Nom=request.Nom;
-            collaborateur.Prenom=request.Prenom;
-            collaborateur.Email_personnel=request.Email_personnel;
-            collaborateur.Email_profesionnel=request.Email_profesionnel;
-            collaborateur.Naissance=request.Naissance;
-            collaborateur.Telephone=request.Telephone;
 
-            return (Ok(collaborateurs));
+            dbcollaborateur.Nom=request.Nom;
+            dbcollaborateur.Prenom=request.Prenom;
+            dbcollaborateur.Email_personnel=request.Email_personnel;
+            dbcollaborateur.Email_profesionnel=request.Email_profesionnel;
+            dbcollaborateur.Naissance=request.Naissance;
+            dbcollaborateur.Telephone=request.Telephone;
+
+            await context.SaveChangesAsync();
+
+            return Ok(await context.Collaborateurs.ToListAsync());
         }
 
 
@@ -78,12 +67,14 @@ namespace Neo_backend.Controllers
         public async Task<ActionResult<List<Collaborateur>>> Delete(int Id)
         {
 
-            var collaborateur = collaborateurs.Find(x => x.Id == Id);
-            if (collaborateur == null)
+            var dbcollaborateur = await context.Collaborateurs.FindAsync(Id);
+            if (dbcollaborateur == null)
                 return BadRequest("collaborateur inexistant .");
 
-            collaborateurs.Remove(collaborateur);
-            return (Ok(collaborateurs));
+            context.Collaborateurs.Remove(dbcollaborateur);
+            await context.SaveChangesAsync();
+
+            return Ok(await context.Collaborateurs.ToListAsync());
         }
 
     }
